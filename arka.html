@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>Arka energy Assignment</title>
+ <style>
+ body { margin: 0; }
+ canvas { display: block; }
+ #buttons {
+ position: absolute;
+ top: 10px;
+ left: 10px;
+ }
+ </style>
+</head>
+<body>
+ <div id="buttons">
+ <button id="complete">Complete the polygon</button>
+ <button id="reset">Reset</button>
+ </div>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+ <script>
+
+ const scene = new THREE.Scene();
+ scene.background = new THREE.Color(0xf8f8f8);
+ const camera = new THREE.PerspectiveCamera(75, window.innerWidth /
+window.innerHeight, 0.1, 1000);
+ const renderer = new THREE.WebGLRenderer({ antialias: true });
+ renderer.setSize(window.innerWidth, window.innerHeight);
+ document.body.appendChild(renderer.domElement);
+
+ window.addEventListener('resize', () => {
+ camera.aspect = window.innerWidth / window.innerHeight;
+ camera.updateProjectionMatrix();
+ renderer.setSize(window.innerWidth, window.innerHeight);
+ });
+
+ const gridHelper = new THREE.GridHelper(10, 10);
+ scene.add(gridHelper);
+ console.log("Grid Helper successfully added");
+ camera.position.x = 0;
+ camera.position.y = 10;
+ camera.position.z=0;
+ camera.lookAt(0, 0, 0);
+ console.log("Camera positioned done");
+
+ let vertices = [];
+ const material = new THREE.LineBasicMaterial({ color: 0xa400b6 });
+ function createPolygon() {
+ const geometry = new THREE.BufferGeometry().setFromPoints([...vertices,
+vertices[0]]);
+ const line = new THREE.Line(geometry, material);
+ scene.add(line);
+ vertices = [];
+ console.log("Polygon has been created");
+ }
+ function onMouseClick(event) {
+ const mouse = new THREE.Vector2(
+ (event.clientX / window.innerWidth) *2 -1 ,
+ -(event.clientY / window.innerHeight) *2 +1
+ );
+ const raycaster = new THREE.Raycaster();
+ raycaster.setFromCamera(mouse, camera);
+ const intersects = raycaster.intersectObject(gridHelper);
+ if (intersects.length > 0) {
+ const point = intersects[0].point;
+ vertices.push(point);
+ if (vertices.length > 1) {
+ const metrics = new THREE.BufferGeometry().setFromPoints(vertices.slice(-2));
+ const lines = new THREE.Line(metrics, material);
+ scene.add(lines);
+ }
+ console.log('Vertex is added at the :', point);
+ } else {
+ console.log('Intersection is not possible');
+ }
+ }
+ function completeClick() {
+ if (vertices.length > 2) {
+ createPolygon();
+ } else {
+ console.log('No enough vertices present to create a polygon');
+ }
+ }
+
+ function resetclick() {
+ while (scene.children.length > 0) {
+ scene.remove(scene.children[0]);
+ }
+ scene.add(gridHelper);
+ vertices = [];
+ console.log('Scene reset');
+ }
+ document.addEventListener('click', onMouseClick);
+ document.getElementById('complete').addEventListener('click', completeClick);
+ document.getElementById('reset').addEventListener('click', resetclick);
+ function animate() {
+ requestAnimationFrame(animate);
+ renderer.render(scene, camera);
+ }
+ animate();
+ </script>
+</body>
+</html>
